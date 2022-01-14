@@ -10,11 +10,11 @@
     "module": "esnext",
     "moduleResolution": "node",
     // "noEmit": true,
-    "noEmitOnError": true,
+    "noEmitOnError": false,
     "outDir": "./dist",
     "rootDir": "./",
     "skipLibCheck": true,
-    "strict": true,
+    "strict": false,
     "target": "es2018",
     "lib": ["es2019", "dom"]
   },
