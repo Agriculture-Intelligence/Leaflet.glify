@@ -1,7 +1,7 @@
 {
-  "name": "leaflet.glify.multipart",
+  "name": "leaflet.glify.multipoly",
   "version": "3.2.0",
-  "description": "web gl renderer plugin for leaflet",
+  "description": "web gl renderer plugin for leaflet with MultiPolygon support",
   "main": "dist/glify.js",
   "browser": "dist/glify-browser.js",
   "module": "dist/glify-browser.js",
