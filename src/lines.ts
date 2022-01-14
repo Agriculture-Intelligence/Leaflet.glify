@@ -140,6 +140,7 @@ export class Lines extends BaseGlLayer<ILinesSettings> {
     let weightFn: WeightCallback | null = null;
     let chosenColor: color.IColor;
     let featureIndex = 0;
+    let coordinates;
 
     if (typeof color === "function") {
       colorFn = color;
@@ -164,19 +165,28 @@ export class Lines extends BaseGlLayer<ILinesSettings> {
         ? weightFn(featureIndex, feature)
         : (weight as number);
 
-      const featureVertices = new LineFeatureVertices({
-        project,
-        latitudeKey,
-        longitudeKey,
-        color: chosenColor,
-        weight: chosenWeight,
-        opacity,
-      });
+      //coorinates Array Structure depends on whether feature is multipart or not.
+      //Multi: [ [[],[],[]...], [[],[],[]...], [[],[],[]...]... ], Single: [ [[],[],[]...] ]
+      //Wrap Single Array to treat two types with same method
+      coordinates = (feature.geometry || feature).coordinates;
+      if (feature.geometry.type !== "MultiLineString") {
+        coordinates = [coordinates];
+      }
 
-      featureVertices.fillFromCoordinates(feature.geometry.coordinates);
-      vertices.push(featureVertices);
-      if (eachVertex) {
-        eachVertex(featureVertices);
+      for (let num in coordinates) {
+        const featureVertices = new LineFeatureVertices({
+          project: map.project.bind(map),
+          latitudeKey,
+          longitudeKey,
+          color: chosenColor,
+          weight: chosenWeight,
+          opacity,
+        });
+        featureVertices.fillFromCoordinates(coordinates[num]);
+        vertices.push(featureVertices);
+        if (eachVertex) {
+          eachVertex(featureVertices);
+        }
       }
     }
 
