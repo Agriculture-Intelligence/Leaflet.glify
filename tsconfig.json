@@ -9,7 +9,7 @@
     "declarationMap": true,
     "module": "esnext",
     "moduleResolution": "node",
-    "noEmit": true,
+    // "noEmit": true,
     "noEmitOnError": true,
     "outDir": "./dist",
     "rootDir": "./",
