@@ -1,3 +1,5 @@
+// File info: map-matrix.ts
+
 export class MapMatrix {
   array: Float32Array;
   constructor() {
@@ -16,7 +18,7 @@ export class MapMatrix {
       0,
       0,
       0,
-      0,
+      1, // my modification here to enable y-axis
       0,
       -1,
       1,
