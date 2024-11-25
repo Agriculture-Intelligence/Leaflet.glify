@@ -1,3 +1,5 @@
+// File info: canvas-overlay-ts
+
 /*
 originally taken from: http://www.sumbera.com/gist/js/leaflet/canvas/L.CanvasOverlay.js, added and customized as part of this lib because of need from library
  Generic  Canvas Overlay for leaflet,
@@ -24,6 +26,8 @@ import {
   LayerOptions,
 } from "leaflet";
 
+import { EventEmitter } from "events";
+
 export interface ICanvasOverlayDrawEvent {
   canvas: HTMLCanvasElement;
   bounds: LatLngBounds;
@@ -39,6 +43,10 @@ export type IUserDrawFunc = (event: ICanvasOverlayDrawEvent) => void;
 export type RedrawCallback = (instance: CanvasOverlay) => void;
 
 export class CanvasOverlay extends Layer {
+  private _isDragging: boolean = false;
+
+  public eventEmitter: EventEmitter;
+
   _userDrawFunc: IUserDrawFunc;
   _redrawCallbacks: RedrawCallback[];
   canvas?: HTMLCanvasElement;
@@ -50,6 +58,7 @@ export class CanvasOverlay extends Layer {
 
   constructor(userDrawFunc: IUserDrawFunc, pane: string) {
     super();
+    this.eventEmitter = new EventEmitter();
     this._userDrawFunc = userDrawFunc;
     this._frame = null;
     this._redrawCallbacks = [];
@@ -98,8 +107,36 @@ export class CanvasOverlay extends Layer {
     }
     pane.appendChild(this.canvas);
 
+    // // dear claude, i added these event handlers
     map.on("moveend", this._reset, this);
     map.on("resize", this._resize, this);
+    // // this fixes dragging halfway
+    // map.on("dragstart", this._onDragStart, this);
+    // map.on("drag", this._onDrag, this);
+    // map.on("dragend", this._onDragEnd, this);
+    // // zoom test ?
+    map.on("zoom", this._reset, this);
+    // map.on("move", this._reset, this);
+
+    // map.on("zoomstart", this._onDragStart, this);
+    // map.on("zoom", this._onDrag, this);
+    // map.on("zoomend", this._onDragEnd, this);
+    // // up to here
+
+    // CACHING TEST
+    map.on("movestart", () => this.eventEmitter.emit("movestart"), this);
+    map.on("dragstart", () => this.eventEmitter.emit("dragstart"), this);
+    map.on("zoomstart", () => this.eventEmitter.emit("zoomstart"), this);
+    map.on("moveend", () => this.eventEmitter.emit("moveend"), this);
+    map.on("dragend", () => this.eventEmitter.emit("dragend"), this);
+    map.on("zoomend", () => this.eventEmitter.emit("zoomend"), this);
+
+    // map.on("movestart", () => console.log("test"), this);
+    // map.on("dragstart", () => console.log("test"), this);
+    // map.on("zoomstart", () => console.log("test"), this);
+    // map.on("moveend", () => console.log("test"), this);
+    // map.on("dragend", () => console.log("test"), this);
+    // map.on("zoomend", () => console.log("test"), this);
 
     if (animated) {
       map.on(
@@ -121,9 +158,29 @@ export class CanvasOverlay extends Layer {
       }
       pane.removeChild(this.canvas);
     }
-
+    // // Dear claude, i added these event handlers
     map.off("moveend", this._reset, this);
     map.off("resize", this._resize, this);
+    // // this fixes dragging halfway
+    // map.off("dragstart", this._onDragStart, this);
+    // map.off("drag", this._onDrag, this);
+    // map.off("dragend", this._onDragEnd, this);
+    // // zoom test ?
+    map.off("zoom", this._reset, this);
+    // map.off("move", this._reset, this);
+
+    // map.off("zoomstart", this._onDragStart, this);
+    // map.off("zoom", this._onDrag, this);
+    // map.off("zoomend", this._onDragEnd, this);
+    // // up to here
+
+    // CACHING TEST
+    map.off("movestart", () => this.eventEmitter.emit("movestart"), this);
+    map.off("dragstart", () => this.eventEmitter.emit("dragstart"), this);
+    map.off("zoomstart", () => this.eventEmitter.emit("zoomstart"), this);
+    map.off("moveend", () => this.eventEmitter.emit("moveend"), this);
+    map.off("dragend", () => this.eventEmitter.emit("dragend"), this);
+    map.off("zoomend", () => this.eventEmitter.emit("zoomend"), this);
 
     if (this.isAnimated()) {
       map.off(
@@ -149,11 +206,14 @@ export class CanvasOverlay extends Layer {
   }
 
   _resize(resizeEvent: ResizeEvent): void {
+    // if (this.canvas && !this._isDragging) {
     if (this.canvas) {
       this.canvas.width = resizeEvent.newSize.x;
       this.canvas.height = resizeEvent.newSize.y;
     }
   }
+
+  // and ends here, ondrag is new, resize is changed not to redraw during resize
 
   _reset(): void {
     if (this.canvas) {
@@ -164,6 +224,7 @@ export class CanvasOverlay extends Layer {
   }
 
   _redraw(): void {
+    // console.log("canvas-overlay.ts: _redraw");
     const { _map, canvas } = this;
     const size = _map.getSize();
     const bounds = _map.getBounds();
@@ -173,6 +234,7 @@ export class CanvasOverlay extends Layer {
     const topLeft = new LatLng(bounds.getNorth(), bounds.getWest());
     const offset = this._unclampedProject(topLeft, 0);
     if (canvas) {
+      // console.log("canvas-overlay.ts: _userDrawFunc");
       this._userDrawFunc({
         bounds,
         canvas,
@@ -182,6 +244,7 @@ export class CanvasOverlay extends Layer {
         zoomScale,
         zoom,
       });
+      // console.log("canvas-overlay.ts: emitting drawend");
     }
 
     while (this._redrawCallbacks.length > 0) {
@@ -195,6 +258,7 @@ export class CanvasOverlay extends Layer {
   }
 
   _animateZoom(e: ZoomAnimEvent): void {
+    if (this._isDragging) return;
     const { _map, canvas } = this;
     const scale = _map.getZoomScale(e.zoom, _map.getZoom());
     const offset = this._unclampedLatLngBoundsToNewLayerBounds(

@@ -36,6 +36,20 @@ const web = {
         exclude: /node_modules/,
         use: ["ts-shader-loader"],
       },
+      {
+        test: /\.(png|jpg|gif)$/i,
+        use: [
+          {
+            loader: "url-loader",
+            options: {
+              limit: 131072, // Convert images < 128kb to base64 strings (128 * 1024 = 131072 bytes)
+              fallback: "file-loader", // Use file-loader for images larger than the limit
+              name: "[name].[ext]",
+              outputPath: "images/", // This is only used if an image exceeds the limit
+            },
+          },
+        ],
+      },
     ],
   },
   resolve: {

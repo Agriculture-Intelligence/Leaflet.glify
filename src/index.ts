@@ -1,20 +1,38 @@
+// File info: index.ts
 import { LeafletMouseEvent, Map } from "leaflet";
 
 import { Lines, ILinesSettings } from "./lines";
 import { Points, IPointsSettings } from "./points";
 import { Shapes, IShapesSettings } from "./shapes";
+import { IconPoints, IIconPointsSettings } from "./icon-points";
+import {
+  LabeledIconPoints,
+  ILabeledIconPointsSettings,
+} from "./labeled-icon-points";
 import { debounce } from "./utils";
 
-import vertex from "./shader/vertex/default.glsl";
+import defaultShader from "./shader/vertex/default.glsl";
+import IPshader from "./shader/vertex/icon-points.glsl"; // Add this line
 import dot from "./shader/fragment/dot.glsl";
 import point from "./shader/fragment/point.glsl";
 import puck from "./shader/fragment/puck.glsl";
 import simpleCircle from "./shader/fragment/simple-circle.glsl";
 import square from "./shader/fragment/square.glsl";
 import polygon from "./shader/fragment/polygon.glsl";
+import iconPoints from "./shader/fragment/icon-points.glsl"; // Add this line
+
+import labelBackgroundVertex from "./shader/vertex/background.glsl";
+import labelBackgroundFragment from "./shader/fragment/background.glsl";
+import labelTextVertex from "./shader/vertex/text.glsl";
+import labelTextFragment from "./shader/fragment/text.glsl";
 
 const shader = {
-  vertex,
+  vertex: {
+    defaultShader,
+    IPshader,
+    labelBackgroundVertex,
+    labelTextVertex,
+  },
   fragment: {
     dot,
     point,
@@ -22,6 +40,9 @@ const shader = {
     simpleCircle,
     square,
     polygon,
+    iconPoints, // Add this line
+    labelBackgroundFragment,
+    labelTextFragment,
   },
 };
 
@@ -35,6 +56,11 @@ export class Glify {
   Points: typeof Points = Points;
   Shapes: typeof Shapes = Shapes;
   Lines: typeof Lines = Lines;
+  IconPoints: typeof IconPoints = IconPoints;
+  LabeledIconPoints: typeof LabeledIconPoints = LabeledIconPoints;
+
+  iconPointsInstances: IconPoints[] = [];
+  labeledIconPointsInstances: LabeledIconPoints[] = [];
 
   pointsInstances: Points[] = [];
   shapesInstances: Shapes[] = [];
@@ -52,11 +78,15 @@ export class Glify {
     return this;
   }
 
-  get instances(): Array<Points | Lines | Shapes> {
+  get instances(): Array<
+    Points | Lines | Shapes | IconPoints | LabeledIconPoints
+  > {
     return [
       ...this.pointsInstances,
       ...this.linesInstances,
       ...this.shapesInstances,
+      ...this.iconPointsInstances,
+      ...this.labeledIconPointsInstances, // Add this line
     ];
   }
 
@@ -67,7 +97,7 @@ export class Glify {
       latitudeKey: glify.latitudeKey,
       longitudeKey: glify.longitudeKey,
       vertexShaderSource: () => {
-        return this.shader.vertex;
+        return this.shader.vertex.defaultShader;
       },
       fragmentShaderSource: () => {
         return this.shader.fragment.point;
@@ -85,7 +115,7 @@ export class Glify {
       latitudeKey: this.latitudeKey,
       longitudeKey: this.longitudeKey,
       vertexShaderSource: () => {
-        return this.shader.vertex;
+        return this.shader.vertex.defaultShader;
       },
       fragmentShaderSource: () => {
         return this.shader.fragment.polygon;
@@ -103,7 +133,7 @@ export class Glify {
       latitudeKey: this.latitudeKey,
       longitudeKey: this.longitudeKey,
       vertexShaderSource: () => {
-        return this.shader.vertex;
+        return this.shader.vertex.defaultShader;
       },
       fragmentShaderSource: () => {
         return this.shader.fragment.polygon;
@@ -114,12 +144,74 @@ export class Glify {
     return shapes;
   }
 
+  iconPoints(settings: Partial<IIconPointsSettings>): IconPoints {
+    const iconPoints = new this.IconPoints({
+      setupClick: this.setupClick.bind(this),
+      setupHover: this.setupHover.bind(this),
+      latitudeKey: this.latitudeKey,
+      longitudeKey: this.longitudeKey,
+      vertexShaderSource: () => {
+        return this.shader.vertex.IPshader;
+      },
+      fragmentShaderSource: () => {
+        return this.shader.fragment.iconPoints;
+      },
+      ...settings,
+    });
+    this.iconPointsInstances.push(iconPoints);
+    return iconPoints;
+  }
+
+  labeledIconPoints(
+    settings: Partial<ILabeledIconPointsSettings>
+  ): LabeledIconPoints {
+    const labeledIconPoints = new this.LabeledIconPoints({
+      setupClick: this.setupClick.bind(this),
+      setupHover: this.setupHover.bind(this),
+      latitudeKey: this.latitudeKey,
+      longitudeKey: this.longitudeKey,
+      vertexShaderSource: () => {
+        return this.shader.vertex.IPshader;
+      },
+      fragmentShaderSource: () => {
+        return this.shader.fragment.iconPoints;
+      },
+      labelBackgroundVertexShaderSource: () => {
+        return this.shader.vertex.labelBackgroundVertex;
+      },
+      labelBackgroundFragmentShaderSource: () => {
+        return this.shader.fragment.labelBackgroundFragment;
+      },
+      labelTextVertexShaderSource: () => {
+        return this.shader.vertex.labelTextVertex;
+      },
+      labelTextFragmentShaderSource: () => {
+        return this.shader.fragment.labelTextFragment;
+      },
+      ...settings,
+    } as ILabeledIconPointsSettings); // Type assertion here
+    this.labeledIconPointsInstances.push(labeledIconPoints);
+    return labeledIconPoints;
+  }
+
+  // Update setupClick and setupHover methods to include IconPoints
+  // Update setupClick and setupHover methods to include LabeledIconPoints
   setupClick(map: Map): void {
     if (this.clickSetupMaps.includes(map)) return;
     this.clickSetupMaps.push(map);
     map.on("click", (e: LeafletMouseEvent) => {
       let hit;
       hit = this.Points.tryClick(e, map, this.pointsInstances);
+      if (hit !== undefined) return hit;
+
+      hit = this.IconPoints.tryClick(e, map, this.iconPointsInstances);
+      if (hit !== undefined) return hit;
+
+      hit = this.LabeledIconPoints.tryClick(
+        e,
+        map,
+        this.labeledIconPointsInstances
+      );
       if (hit !== undefined) return hit;
 
       hit = this.Lines.tryClick(e, map, this.linesInstances);
@@ -138,6 +230,12 @@ export class Glify {
       debounce(
         (e: LeafletMouseEvent) => {
           this.Points.tryHover(e, map, this.pointsInstances);
+          this.IconPoints.tryHover(e, map, this.iconPointsInstances);
+          this.LabeledIconPoints.tryHover(
+            e,
+            map,
+            this.labeledIconPointsInstances
+          );
           this.Lines.tryHover(e, map, this.linesInstances);
           this.Shapes.tryHover(e, map, this.shapesInstances);
         },
