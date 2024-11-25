@@ -29,19 +29,21 @@ inspired by http://bl.ocks.org/Sumbera/c6fed35c377a46ff74c3 & need.
 ### Typescript
 
 ```ts
-import glify from 'leaflet.glify';
+import glify from "leaflet.glify";
 // namespace
-glify
+glify;
 ```
 
 ### Node
+
 ```js
-const { glify } = require('leaflet.glify');
+const { glify } = require("leaflet.glify");
 // namespace
-glify
+glify;
 ```
 
 ### Simple Points Usage
+
 ```ts
 L.glify.points({
   map,
@@ -57,6 +59,7 @@ L.glify.points({
 ```
 
 ### Simple Lines Usage
+
 ```ts
 L.glify.lines({
   map: map,
@@ -76,6 +79,7 @@ L.glify.lines({
 ```
 
 ### Simple Polygon Usage
+
 ```ts
 L.glify.shapes({
   map,
@@ -86,119 +90,156 @@ L.glify.shapes({
   },
   hover: (e, feature): boolean | void => {
     // do something when a shape is hovered
-  }
+  },
 });
 ```
 
 ## API
+
 **`L.glify` methods**
-* [`points(options)`](#lglifypointsoptions-object)
-* [`lines(options)`](#lglifylinesoptions-object)
-* [`shapes(options)`](#lglifyshapesoptions-object)
-* [`longitudeFirst()`](#longitudefirst)
-* [`latitudeFirst()`](#latitudefirst)
+
+- [`points(options)`](#lglifypointsoptions-object)
+- [`lines(options)`](#lglifylinesoptions-object)
+- [`shapes(options)`](#lglifyshapesoptions-object)
+- [`longitudeFirst()`](#longitudefirst)
+- [`latitudeFirst()`](#latitudefirst)
 
 **`L.glify` properties**
-* [`pointsInstances`](#pointsinstances)
-* [`linesInstances`](#linesinstances)
-* [`shapesInstances`](#shapesinstances)
+
+- [`pointsInstances`](#pointsinstances)
+- [`linesInstances`](#linesinstances)
+- [`shapesInstances`](#shapesinstances)
 
 ---
+
 ### `L.glify.points(options: object)`
+
 Adds point data passed in `options.data` to the Leaflet map instance passed in `options.map`.
+
 #### Returns
+
 `L.glify.Points` instance
+
 #### Options
-* `map` `{Object}` required leaflet map
-* `data` `{Object}` required geojson `FeatureCollection` object or an array of `[lat: number, lng: number]` arrays
-* `vertexShaderSource` `{String|Function}` optional glsl vertex shader source, defaults to use `L.glify.shader.vertex`
-* `fragmentShaderSource` `{String|Function}` optional glsl fragment shader source, defaults to use `L.glify.shader.fragment.point`
-* `click` `{Function}` optional event handler for clicking a point
-* `hover` `{Function}` optional event handler for hovering a point
-* `color` `{Function|Object|String}` optional, default is 'random'
-  * When `color` is a `Function` its arguments are the `index`:`number` and the `point`:`array` that is being colored, opacity can optionally be included as `{ a: number }`.
+
+- `map` `{Object}` required leaflet map
+- `data` `{Object}` required geojson `FeatureCollection` object or an array of `[lat: number, lng: number]` arrays
+- `vertexShaderSource` `{String|Function}` optional glsl vertex shader source, defaults to use `L.glify.shader.vertex`
+- `fragmentShaderSource` `{String|Function}` optional glsl fragment shader source, defaults to use `L.glify.shader.fragment.point`
+- `click` `{Function}` optional event handler for clicking a point
+- `hover` `{Function}` optional event handler for hovering a point
+- `color` `{Function|Object|String}` optional, default is 'random'
+  - When `color` is a `Function` its arguments are the `index`:`number` and the `point`:`array` that is being colored, opacity can optionally be included as `{ a: number }`.
     The result should be of interface `IColor`, example: `{r: number, g: number, b: number, a: number }`.
-* `opacity` `{Number}` a value from 0 to 1, default is 0.8.  Only used when opacity isn't included on color.
-* `className` `{String}` a class name applied to canvas, default is ''
-* `size` `{Number|Function}` pixel size of point
-  * When `size` is a `Function` its arguments are `index`:`number`, and the `point`:`array` that is being sized
-* `sensitivity` `{Number}` exaggerates the size of the clickable area to make it easier to click a point
-* `sensitivityHover` `{Number}` exaggerates the size of the hoverable area to make it easier to hover a point
-* `preserveDrawingBuffer` `{Boolean}` optional, default `false`, perverse draw buffer on webgl context.
-  * CAUTION: May cause performance issue with large data sets.
-* `pane` `{String}` optional, default is `overlayPane`. Can be set to a custom pane.
+- `opacity` `{Number}` a value from 0 to 1, default is 0.8. Only used when opacity isn't included on color.
+- `className` `{String}` a class name applied to canvas, default is ''
+- `size` `{Number|Function}` pixel size of point
+  - When `size` is a `Function` its arguments are `index`:`number`, and the `point`:`array` that is being sized
+- `sensitivity` `{Number}` exaggerates the size of the clickable area to make it easier to click a point
+- `sensitivityHover` `{Number}` exaggerates the size of the hoverable area to make it easier to hover a point
+- `preserveDrawingBuffer` `{Boolean}` optional, default `false`, perverse draw buffer on webgl context.
+  - CAUTION: May cause performance issue with large data sets.
+- `pane` `{String}` optional, default is `overlayPane`. Can be set to a custom pane.
+
 ---
+
 ### `L.glify.lines(options: object)`
+
 Adds line data passed in `options.data` to the Leaflet map instance passed in `options.map`.
+
 #### Returns
+
 `L.glify.Lines` instance
+
 #### Options
-* `map` `{Object}` required leaflet map
-* `data` `{Object}` required geojson `FeatureCollection` object with `geometry.coordinates` arrays being in a `[lat: number, lng: number]` format
-* `vertexShaderSource` `{String|Function}` optional glsl vertex shader source, defaults to use `L.glify.shader.vertex`
-* `fragmentShaderSource` `{String|Function}` optional glsl fragment shader source, defaults to use `L.glify.shader.fragment.point`
-* `click` `{Function}` optional event handler for clicking a line
-* `hover` `{Function}` optional event handler for hovering a line
-* `hoverOff` `{Function}` optional event handler for hovering off a line
-* `color` `{Function|Object|String}` optional, default is 'random'
-  * When `color` is a `Function` its arguments are the `index`:`number` and the `feature`:`object` that is being colored, opacity can optionally be included as `{ a: number }`.
+
+- `map` `{Object}` required leaflet map
+- `data` `{Object}` required geojson `FeatureCollection` object with `geometry.coordinates` arrays being in a `[lat: number, lng: number]` format
+- `vertexShaderSource` `{String|Function}` optional glsl vertex shader source, defaults to use `L.glify.shader.vertex`
+- `fragmentShaderSource` `{String|Function}` optional glsl fragment shader source, defaults to use `L.glify.shader.fragment.point`
+- `click` `{Function}` optional event handler for clicking a line
+- `hover` `{Function}` optional event handler for hovering a line
+- `hoverOff` `{Function}` optional event handler for hovering off a line
+- `color` `{Function|Object|String}` optional, default is 'random'
+  - When `color` is a `Function` its arguments are the `index`:`number` and the `feature`:`object` that is being colored, opacity can optionally be included as `{ a: number }`.
     The result should be of interface `IColor`, example: `{r: number, g: number, b: number, a: number }`.
-* `opacity` `{Number}` a value from 0 to 1, default is 0.5.  Only used when opacity isn't included on color.
-* `className` `{String}` a class name applied to canvas, default is ''
-* `sensitivity` `{Number}` exaggerates the size of the clickable area to make it easier to click a line
-* `sensitivityHover` `{Number}` exaggerates the size of the hoverable area to make it easier to hover a line
-* `preserveDrawingBuffer` `{Boolean}` optional, default `false`, perverse draw buffer on webgl context.
-  * CAUTION: May cause performance issue with large data sets. 
-* `weight` `{Number|Function}` a value in pixels of how thick lines should be drawn
-  * When `weight` is a `Function` its arguments are gets the `index`:`number`, and the `feature`:`object` that is being drawn
-  * CAUTION: Zoom of more than 18 will turn weight internally to 1 to prevent WebGL precision rendering issues.
-* `pane` `{String}` optional, default is `overlayPane`. Can be set to a custom pane.
+- `opacity` `{Number}` a value from 0 to 1, default is 0.5. Only used when opacity isn't included on color.
+- `className` `{String}` a class name applied to canvas, default is ''
+- `sensitivity` `{Number}` exaggerates the size of the clickable area to make it easier to click a line
+- `sensitivityHover` `{Number}` exaggerates the size of the hoverable area to make it easier to hover a line
+- `preserveDrawingBuffer` `{Boolean}` optional, default `false`, perverse draw buffer on webgl context.
+  - CAUTION: May cause performance issue with large data sets.
+- `weight` `{Number|Function}` a value in pixels of how thick lines should be drawn
+  - When `weight` is a `Function` its arguments are gets the `index`:`number`, and the `feature`:`object` that is being drawn
+  - CAUTION: Zoom of more than 18 will turn weight internally to 1 to prevent WebGL precision rendering issues.
+- `pane` `{String}` optional, default is `overlayPane`. Can be set to a custom pane.
+
 ---
+
 ### `L.glify.shapes(options: object)`
-Adds polygon data passed in `options.data` to the Leaflet map instance passed in `options.map`.
+
+Adds polygon/multipolygon data passed in `options.data` to the Leaflet map instance passed in `options.map`.
+
 #### Returns
+
 `L.glify.Shapes` instance
+
 #### Options
-* `map` `{Object}` required leaflet map
-* `data` `{Object}` required geojson `FeatureCollection` object with `geometry.coordinates` arrays being in a `[lng: number, lat: number]` format *Note: `lat` and `lng` are expected in a different order than in `.points()` and `.lines()`*
-* `vertexShaderSource` `{String|Function}` optional glsl vertex shader source, defaults to use `L.glify.shader.vertex`
-* `fragmentShaderSource` `{String|Function}` optional glsl fragment shader source, defaults to use `L.glify.shader.fragment.polygon`
-* `click` `{Function}` optional event handler for clicking a shape
-* `hover` `{Function}` optional event handler for hovering a shape
-* `color` `{Function|Object|String}` optional, default is 'random'
-  * When `color` is a `Function` its arguments are the `index`:`number` and the `feature`:`object` that is being colored, opacity can optionally be included as `{ a: number }`.
+
+- `map` `{Object}` required leaflet map
+- `data` `{Object}` required geojson `FeatureCollection` object with `geometry.coordinates` arrays being in a `[lng: number, lat: number]` format _Note: `lat` and `lng` are expected in a different order than in `.points()` and `.lines()`_
+- `vertexShaderSource` `{String|Function}` optional glsl vertex shader source, defaults to use `L.glify.shader.vertex`
+- `fragmentShaderSource` `{String|Function}` optional glsl fragment shader source, defaults to use `L.glify.shader.fragment.polygon`
+- `click` `{Function}` optional event handler for clicking a shape
+- `hover` `{Function}` optional event handler for hovering a shape
+- `color` `{Function|Object|String}` optional, default is 'random'
+  - When `color` is a `Function` its arguments are the `index`:`number` and the `feature`:`object` that is being colored, opacity can optionally be included as `{ a: number }`.
     The result should be of interface `IColor`, example: `{r: number, g: number, b: number, a: number }`.
-* `opacity` `{Number}` a value from 0 to 1, default is 0.5.   Only used when opacity isn't included on color.
-* `className` `{String}` a class name applied to canvas, default is ''
-* `border` `{Boolean}` optional, default `false`. When set to `true`, a border with an opacity of `settings.borderOpacity` is displayed.
-* `borderOpacity` `{Number}` optional, default `false`. Border opacity for when `settings.boarder` is `true`.  Default is 1.
-* `preserveDrawingBuffer` `{Boolean}` optional, default `1`, adjusts the border opacity separate from `opacity`.
-  * CAUTION: May cause performance issue with large data sets.
-* `pane` `{String}` optional, default is `overlayPane`. Can be set to a custom pane.
+- `opacity` `{Number}` a value from 0 to 1, default is 0.5. Only used when opacity isn't included on color.
+- `className` `{String}` a class name applied to canvas, default is ''
+- `border` `{Boolean}` optional, default `false`. When set to `true`, a border with an opacity of `settings.borderOpacity` is displayed.
+- `borderOpacity` `{Number}` optional, default `false`. Border opacity for when `settings.boarder` is `true`. Default is 1.
+- `preserveDrawingBuffer` `{Boolean}` optional, default `1`, adjusts the border opacity separate from `opacity`.
+  - CAUTION: May cause performance issue with large data sets.
+- `pane` `{String}` optional, default is `overlayPane`. Can be set to a custom pane.
+
 ---
+
 ### `longitudeFirst()`
+
 Sets the expecetd order of arrays in the `coordinates` array of GeoJSON passed to `options.data` to be `[lng, lat]`
+
 #### Returns
+
 The updated `L.glify` instance it was called on
 
 ---
+
 ### `latitudeFirst()`
+
 Sets the expecetd order of arrays in the `coordinates` array of GeoJSON passed to `options.data` to be `[lat, lng]`
+
 #### Returns
+
 The updated `L.glify` instance it was called on
 
 ---
-### `pointsInstances`  
+
+### `pointsInstances`
+
 All of the `L.glify.Points` instances
 
 ---
+
 ### `linesInstances`
+
 All of the `L.glify.Lines` instances
 
 ---
-### `shapesInstances`
-All of the `L.glify.Shapes` instances
 
+### `shapesInstances`
+
+All of the `L.glify.Shapes` instances
 
 ## Building
 
@@ -213,9 +254,11 @@ Use `yarn serve` or `npm run serve`
 Use `yarn test` or `npm run test`
 
 ## Update & Remove Data
+
 `L.glify` instances can be updated using the `update(data, index)` method.
-* `data` `{Object}` Lines and Shapes require a single GeoJSON feature. Points require the same data structure as the original object and therefore also accept an array of coordinates.
-* `index` `{number}` An integer indicating the index of the element to be updated.
+
+- `data` `{Object}` Lines and Shapes require a single GeoJSON feature. Points require the same data structure as the original object and therefore also accept an array of coordinates.
+- `index` `{number}` An integer indicating the index of the element to be updated.
 
 An object or some elements of an object are removed using the `remove(index)` method.
 
@@ -223,30 +266,33 @@ An object or some elements of an object are removed using the `remove(index)` me
 
 - `index` `{number|Array}` optional - An integer or an array of integers specifying the indices of the elements to be removed.
   If `index` is not defined, the entire object is removed.
-  
+
 ### Example
+
 ```ts
 let newPoints = L.glify.points({
   map: leafletMap,
   data: geojsonFeatureCollection,
-  size: 30
+  size: 30,
 });
 
 // Update the third feature
-newPoints.update({
-  "type": "FeatureCollection",
-  "features": [{
-    "type": "Feature",
-    "properties": {},
-    "geometry": {
-      "type": "Point",
-      "coordinates": [
-        34.072204277521394
-        -118.44255208969116
-      ]
-    }
-  }]
-}, 2);
+newPoints.update(
+  {
+    type: "FeatureCollection",
+    features: [
+      {
+        type: "Feature",
+        properties: {},
+        geometry: {
+          type: "Point",
+          coordinates: [34.072204277521394 - 118.44255208969116],
+        },
+      },
+    ],
+  },
+  2
+);
 
 // Now remove it
 newPoints.remove(2);
