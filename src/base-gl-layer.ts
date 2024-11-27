@@ -1,10 +1,14 @@
-import { LeafletMouseEvent, Map } from "leaflet";
+// File info: base-gl-layer.ts
+
+import { LeafletMouseEvent, Map, LatLng } from "leaflet";
 
 import { IColor } from "./color";
-import { IPixel } from "./pixel"
+import { IPixel } from "./pixel";
 import { CanvasOverlay, ICanvasOverlayDrawEvent } from "./canvas-overlay";
 import { notProperlyDefined } from "./errors";
 import { MapMatrix } from "./map-matrix";
+
+import { Point } from "leaflet";
 
 export interface IShaderVariable {
   type: "FLOAT";
@@ -59,7 +63,7 @@ export const defaults: Partial<IBaseGlLayerSettings> = {
 export type ColorCallback = (featureIndex: number, feature: any) => IColor;
 
 export abstract class BaseGlLayer<
-  T extends IBaseGlLayerSettings = IBaseGlLayerSettings
+  T extends IBaseGlLayerSettings = IBaseGlLayerSettings,
 > {
   bytes = 0;
   active: boolean;
@@ -84,6 +88,36 @@ export abstract class BaseGlLayer<
 
   abstract render(): this;
   abstract removeInstance(this: any): this;
+
+  // -----------------------------
+  // CACHING THE COORDINATE SYSTEM
+
+  protected _isDragging: boolean = false;
+  protected _dragStartCenter: IPixel | null = null;
+  protected _dragStartZoom: number | null = null;
+  protected _dragStartOffset: Point | null = null;
+
+  protected _context: ICanvasOverlayDrawEvent | null = null;
+
+  protected startDragCaching(): void {
+    this._isDragging = true;
+    this._dragStartCenter = this.mapCenterPixels;
+    this._dragStartZoom = this.map.getZoom();
+    if (this._context) {
+      this._dragStartOffset = this._context.offset.clone();
+    }
+  }
+
+  protected stopDragCaching(): void {
+    this._isDragging = false;
+    this._dragStartCenter = null;
+    this._dragStartZoom = null;
+    this._dragStartOffset = null;
+    this.render(); // Re-render after stopping caching
+  }
+
+  // CACHING THE COORDINATE SYSTEM
+  // -----------------------------
 
   get data(): any {
     if (!this.settings.data) {
@@ -160,18 +194,28 @@ export abstract class BaseGlLayer<
     this.matrix = null;
     this.vertices = null;
     this.vertexLines = null;
-    try{
-      this.mapCenterPixels =  this.map.project(this.map.getCenter(), 0)
-    } catch(err){
-      this.mapCenterPixels = {x:-0,y:-0}
+    try {
+      this.mapCenterPixels = this.map.project(this.map.getCenter(), 0);
+    } catch (err) {
+      this.mapCenterPixels = { x: -0, y: -0 };
     }
     const preserveDrawingBuffer = Boolean(settings.preserveDrawingBuffer);
+
     const layer = (this.layer = new CanvasOverlay(
       (context: ICanvasOverlayDrawEvent) => {
+        this._context = context;
         return this.drawOnCanvas(context);
       },
       this.pane
     ).addTo(this.map));
+
+    layer.eventEmitter.on("movestart", this.startDragCaching.bind(this));
+    layer.eventEmitter.on("moveend", this.stopDragCaching.bind(this));
+    layer.eventEmitter.on("zoomstart", this.startDragCaching.bind(this));
+    layer.eventEmitter.on("zoomend", this.stopDragCaching.bind(this));
+    layer.eventEmitter.on("dragstart", this.startDragCaching.bind(this));
+    layer.eventEmitter.on("dragend", this.stopDragCaching.bind(this));
+
     if (!layer.canvas) {
       throw new Error(notProperlyDefined("layer.canvas"));
     }
@@ -182,7 +226,10 @@ export abstract class BaseGlLayer<
     if (this.className) {
       canvas.className += " " + this.className;
     }
-    this.gl = (canvas.getContext("webgl2", { preserveDrawingBuffer }) ??
+    this.gl = (canvas.getContext("webgl2", {
+      preserveDrawingBuffer,
+      antialias: true,
+    }) ??
       canvas.getContext("webgl", { preserveDrawingBuffer }) ??
       canvas.getContext("experimental-webgl", {
         preserveDrawingBuffer,
@@ -368,6 +415,14 @@ export abstract class BaseGlLayer<
       featuresData[index] = feature;
     }
 
+    return this.render();
+  }
+
+  updateAll(features: number[][]): this {
+    // WARN TEMP
+    // TODO FIX
+    // console.log("updateAll CALLED! features:", features);
+    this.settings.data = features;
     return this.render();
   }
 
