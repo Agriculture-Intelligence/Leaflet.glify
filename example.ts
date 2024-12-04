@@ -58,7 +58,7 @@ Promise.all([
       e.originalEvent.preventDefault(); // Prevent the default context menu from showing
       //set up a standalone popup (use a popup as a layer)
       L.popup()
-        .setLatLng(feature)
+        .setLatLng(e.latlng)
         .setContent(`right clicked on Line ${feature.properties.name}`)
         .openOn(map);
     },
